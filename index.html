@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raqamni Topish O'yini</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-mode {
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover, .mode-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        input[type="number"] {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            text-align: center;
+            width: 150px;
+            margin: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .history {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b6b;
+        }
+
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .hint {
+            color: #FFC107;
+            font-weight: bold;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .bounce {
+            animation: bounce 1s;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎯 Raqamni Topish O'yini</h1>
+        
+        <div class="game-mode">
+            <button class="mode-btn active" onclick="setMode('setup')">O'yin Boshlash</button>
+            <button class="mode-btn" onclick="setMode('guess')">Topish</button>
+        </div>
+
+        <div id="setup-mode">
+            <div class="game-info">
+                <h3>O'yin qoidalari:</h3>
+                <p>1-chi o'yinchi 1 dan 100 gacha raqam o'ylaydi</p>
+                <p>2-chi o'yinchi bu raqamni topishga harakat qiladi</p>
+            </div>
+            
+            <div class="input-group">
+                <label>O'ylagan raqamingizni kiriting (1-100):</label><br>
+                <input type="number" id="secretNumber" min="1" max="100" placeholder="Raqam">
+                <br>
+                <button class="btn" onclick="startGame()">O'yinni Boshlash</button>
+            </div>
+        </div>
+
+        <div id="guess-mode" style="display: none;">
+            <div class="game-info">
+                <h3 id="gameStatus">O'yin boshlanmadi</h3>
+                <p id="attemptsInfo">Urinishlar soni: 0</p>
+            </div>
+
+            <div class="input-group">
+                <input type="number" id="guessInput" min="1" max="100" placeholder="Taxminingiz" disabled>
+                <br>
+                <button class="btn" id="guessBtn" onclick="makeGuess()" disabled>Taxmin qilish</button>
+                <button class="btn" onclick="resetGame()">Qaytadan o'ynash</button>
+            </div>
+
+            <div class="history" id="history">
+                <h4>O'yin tarixi:</h4>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let secretNumber = null;
+        let attempts = 0;
+        let gameStarted = false;
+        let currentMode = 'setup';
+
+        function setMode(mode) {
+            const buttons = document.querySelectorAll('.mode-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mode === 'setup') {
+                document.getElementById('setup-mode').style.display = 'block';
+                document.getElementById('guess-mode').style.display = 'none';
+                currentMode = 'setup';
+            } else {
+                document.getElementById('setup-mode').style.display = 'none';
+                document.getElementById('guess-mode').style.display = 'block';
+                currentMode = 'guess';
+            }
+        }
+
+        function startGame() {
+            const input = document.getElementById('secretNumber').value;
+            if (!input || input < 1 || input > 100) {
+                alert('Iltimos, 1 dan 100 gacha raqam kiriting!');
+                return;
+            }
+
+            secretNumber = parseInt(input);
+            gameStarted = true;
+            attempts = 0;
+
+            // Switch to guess mode
+            setMode('guess');
+            document.querySelectorAll('.mode-btn')[1].click();
+
+            // Enable guess inputs
+            document.getElementById('guessInput').disabled = false;
+            document.getElementById('guessBtn').disabled = false;
+
+            updateGameStatus('O\'yin boshlandi! 2-chi o\'yinchi raqamni topsin!');
+            updateAttemptsInfo();
+
+            // Clear history
+            const history = document.getElementById('history');
+            history.innerHTML = '<h4>O\'yin tarixi:</h4>';
+
+            // Clear secret number input
+            document.getElementById('secretNumber').value = '';
+        }
+
+        function makeGuess() {
+            const guessInput = document.getElementById('guessInput');
+            const guess = parseInt(guessInput.value);
+
+            if (!guess || guess < 1 || guess > 100) {
+                alert('1 dan 100 gacha raqam kiriting!');
+                return;
+            }
+
+            attempts++;
+            updateAttemptsInfo();
+
+            const history = document.getElementById('history');
+            let message = '';
+            let className = '';
+
+            if (guess === secretNumber) {
+                message = `🎉 Tabriklaymiz! ${guess} to'g'ri javob! ${attempts} urinishda topdingiz!`;
+                className = 'success';
+                endGame(true);
+            } else if (guess < secretNumber) {
+                message = `${guess} - Juda kichik! Kattaroq raqam o'ylang`;
+                className = 'hint';
+            } else {
+                message = `${guess} - Juda katta! Kichikroq raqam o'ylang`;
+                className = 'hint';
+            }
+
+            // Add to history
+            const historyItem = document.createElement('div');
+            historyItem.className = `history-item ${className}`;
+            historyItem.textContent = message;
+            history.appendChild(historyItem);
+
+            // Scroll to bottom
+            history.scrollTop = history.scrollHeight;
+
+            // Clear input
+            guessInput.value = '';
+
+            // Add bounce animation
+            document.querySelector('.game-container').classList.add('bounce');
+            setTimeout(() => {
+                document.querySelector('.game-container').classList.remove('bounce');
+            }, 1000);
+        }
+
+        function updateGameStatus(status) {
+            document.getElementById('gameStatus').textContent = status;
+        }
+
+        function updateAttemptsInfo() {
+            document.getElementById('attemptsInfo').textContent = `Urinishlar soni: ${attempts}`;
+        }
+
+        function endGame(won) {
+            document.getElementById('guessInput').disabled = true;
+            document.getElementById('guessBtn').disabled = true;
+            
+            if (won) {
+                updateGameStatus('🏆 O\'yin tugadi! G\'olib topildi!');
+            }
+        }
+
+        function resetGame() {
+            secretNumber = null;
+            attempts = 0;
+            gameStarted = false;
+            
+            document.getElementById('guessInput').disabled = true;
+            document.getElementById('guessBtn').disabled = true;
+            document.getElementById('guessInput').value = '';
+            
+            updateGameStatus('O\'yin boshlanmadi');
+            updateAttemptsInfo();
+            
+            const history = document.getElementById('history');
+            history.innerHTML = '<h4>O\'yin tarixi:</h4>';
+
+            // Switch back to setup mode
+            document.querySelectorAll('.mode-btn')[0].click();
+        }
+
+        // Enter key support
+        document.getElementById('secretNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
+
+        document.getElementById('guessInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                makeGuess();
+            }
+        });
+    </script>
+</body>
+</html>
